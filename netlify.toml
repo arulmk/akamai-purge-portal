@@ -2,4 +2,6 @@
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
-  SECRETS_SCAN_OMIT_KEYS = ["GITHUB_REPO"]
+
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "GITHUB_REPO"
