@@ -1,0 +1,25 @@
+name: Akamai Purge Workflow
+
+on:
+  repository_dispatch:
+    types: [akamai_purge]
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Received Payload
+        run: |
+          echo "Hostname: ${{ github.event.client_payload.hostname }}"
+          echo "CP Code: ${{ github.event.client_payload.cp_code }}"
+          echo "Network: ${{ github.event.client_payload.network }}"
+          echo "Method: ${{ github.event.client_payload.method }}"
+          echo "Objects: ${{ join(github.event.client_payload.objects, ', ') }}"
+
+      - name: Run Akamai Purge Action
+        uses: akamai/akamai-purge-action@v1
+        with:
+          edgerc: ${{ secrets.AKAMAI_EDGERC }}
+          network: ${{ github.event.client_payload.network }}
+          method: ${{ github.event.client_payload.method }}
+          objects: ${{ join(github.event.client_payload.objects, ',') }}
