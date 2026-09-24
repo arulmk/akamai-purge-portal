@@ -21,7 +21,6 @@ export default function PurgeForm() {
     setLoading(true);
     setStatus('Sending trigger request...');
 
-    // Parse comma-separated URLs or paths into an array
     const payload = {
       ...formData,
       objects: formData.objects.split(',').map((url) => url.trim()),
