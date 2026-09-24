@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Print Received Payload
         run: |
+          echo "Purge Type: ${{ github.event.client_payload.purge_type }}"
           echo "Hostname: ${{ github.event.client_payload.hostname }}"
           echo "CP Code: ${{ github.event.client_payload.cp_code }}"
           echo "Network: ${{ github.event.client_payload.network }}"
