@@ -5,3 +5,8 @@
 
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "GITHUB_REPO"
+
+[[redirects]]
+  from = "/api/purge"
+  to = "/.netlify/functions/triggerPurge"
+  status = 200

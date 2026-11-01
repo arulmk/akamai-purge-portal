@@ -1,0 +1,32 @@
+name: Akamai Purge Workflow
+
+on:
+  repository_dispatch:
+    types: [akamai_purge]
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install EdgeGrid client
+        run: npm install --no-save --no-audit --no-fund akamai-edgegrid@4.0.4
+
+      # The payload is passed through env vars only (never interpolated into a
+      # shell script), and scripts/purge.cjs re-validates every field.
+      - name: Run Akamai purge
+        env:
+          AKAMAI_EDGERC: ${{ secrets.AKAMAI_EDGERC }}
+          PURGE_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: |
+          umask 077
+          printf '%s\n' "$AKAMAI_EDGERC" > "$HOME/.edgerc"
+          node scripts/purge.cjs

@@ -5,19 +5,26 @@ export default function PurgeForm() {
   const [urls, setUrls] = useState('');
   const [network, setNetwork] = useState('Production');
   const [purgeMethod, setPurgeMethod] = useState('Delete');
-  
+  const [accessKey, setAccessKey] = useState('');
+
   // Status states for submission feedback
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null); // { type: 'success' | 'error', message: string }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!urls.trim()) {
+
+    const objects = urls.split('\n').map((item) => item.trim()).filter(Boolean);
+
+    if (objects.length === 0) {
       setStatus({
         type: 'error',
         message: `Please enter at least one ${activeTab === 'hostname' ? 'hostname/URL' : 'CP Code'}.`,
       });
+      return;
+    }
+    if (!accessKey.trim()) {
+      setStatus({ type: 'error', message: 'Please enter the portal access key.' });
       return;
     }
 
@@ -25,34 +32,38 @@ export default function PurgeForm() {
     setStatus(null);
 
     try {
-      // Replace '/api/purge' with your actual backend endpoint or Netlify Serverless Function
       const response = await fetch('/api/purge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Portal-Key': accessKey.trim(),
+        },
         body: JSON.stringify({
-          type: activeTab,
-          targets: urls.split('\n').map((item) => item.trim()).filter(Boolean),
+          type: activeTab === 'hostname' ? 'url' : 'cpcode',
+          objects,
           network: network.toLowerCase(),
           method: purgeMethod.toLowerCase(),
         }),
       });
 
-      // Simulated success fallback if backend isn't connected yet
-      if (response.ok || response.status === 404) {
-        setStatus({
-          type: 'success',
-          message: `Purge request dispatched successfully for ${activeTab === 'hostname' ? 'URLs' : 'CP Codes'} on ${network}!`,
-        });
-        setUrls(''); // Clear input on success
-      } else {
-        throw new Error('Purge dispatch failed. Check API credentials or network.');
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        // non-JSON response (e.g. 404 from a static host with no function)
       }
-    } catch (err) {
-      // Demo success state if testing locally without backend endpoint
+
+      if (!response.ok) {
+        throw new Error(data.error || `Purge dispatch failed (HTTP ${response.status}).`);
+      }
+
       setStatus({
         type: 'success',
-        message: `Purge request triggered successfully for CP Code (${urls.trim()}) on ${network}.`,
+        message: `${data.message || 'Purge request dispatched.'} Check the GitHub Actions tab for the result.`,
       });
+      setUrls(''); // Clear input on success
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message });
     } finally {
       setLoading(false);
     }
@@ -118,7 +129,7 @@ export default function PurgeForm() {
               style={styles.textarea}
               placeholder={
                 activeTab === 'hostname'
-                  ? 'e.g. www.example.com/assets/app.js'
+                  ? 'One URL per line, e.g. www.example.com/assets/app.js'
                   : 'e.g. 1826618'
               }
               value={urls}
@@ -156,6 +167,21 @@ export default function PurgeForm() {
                 <option value="Invalidate">Invalidate</option>
               </select>
             </div>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label} htmlFor="accessKey">
+              Access Key
+            </label>
+            <input
+              id="accessKey"
+              type="password"
+              autoComplete="off"
+              style={styles.select}
+              placeholder="Portal access key"
+              value={accessKey}
+              onChange={(e) => setAccessKey(e.target.value)}
+            />
           </div>
 
           <button 
